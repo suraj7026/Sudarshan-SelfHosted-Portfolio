@@ -1,0 +1,107 @@
+# Nginx Configuration Example for MinIO Resume Serving
+# Save this as nginx.conf and update the MinIO IP address
+
+server {
+    listen 80;
+    server_name surajhomeserver.tailc013a7.ts.net;
+
+    # Optional: Redirect HTTP to HTTPS if using SSL
+    # return 301 https://$server_name$request_uri;
+}
+
+# Main server block
+server {
+    listen 80;  # Or 443 if using SSL
+    server_name surajhomeserver.tailc013a7.ts.net;
+
+    # SSL Configuration (if using)
+    # ssl_certificate /path/to/cert.pem;
+    # ssl_certificate_key /path/to/key.pem;
+
+    # Client max body size (for uploads if needed)
+    client_max_body_size 100M;
+
+    # 1. React Frontend
+    location / {
+        proxy_pass http://frontend:80;  # Or your frontend service name/IP
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # 2. Backend API (if you have one)
+    location /api {
+        proxy_pass http://backend:8080;  # Or your backend service
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 3. MinIO Object Storage - THIS IS THE KEY PART!
+    # Maps /assets/ to MinIO bucket: surajwebsite
+    location /assets/ {
+        # IMPORTANT: Update this IP to your MinIO server IP
+        # If MinIO is in Docker on same network, use service name: http://minio:9000
+        proxy_pass http://192.168.1.24:9000/surajwebsite/;
+        
+        # Required headers for MinIO
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # CORS headers for browser access
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods 'GET, HEAD, OPTIONS' always;
+        add_header Access-Control-Allow-Headers 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+        add_header Access-Control-Expose-Headers 'Content-Length,Content-Range' always;
+        
+        # Handle OPTIONS requests (CORS preflight)
+        if ($request_method = 'OPTIONS') {
+            return 204;
+        }
+        
+        # Caching for better performance
+        expires 1d;
+        add_header Cache-Control "public, immutable";
+        
+        # Security headers
+        add_header X-Content-Type-Options nosniff;
+        add_header X-Frame-Options SAMEORIGIN;
+        
+        # Proxy timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # Buffer settings
+        proxy_buffering on;
+        proxy_buffer_size 4k;
+        proxy_buffers 8 4k;
+        proxy_busy_buffers_size 8k;
+    }
+
+    # Optional: Health check endpoint
+    location /health {
+        access_log off;
+        return 200 "OK\n";
+        add_header Content-Type text/plain;
+    }
+}
+
+# Example for Docker Compose setup
+# If MinIO is in same Docker network:
+#
+# location /assets/ {
+#     proxy_pass http://minio:9000/surajwebsite/;
+#     proxy_set_header Host $http_host;
+#     add_header Access-Control-Allow-Origin * always;
+# }
