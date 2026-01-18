@@ -1,0 +1,21 @@
+name: Deploy to Home Server
+
+on:
+  push:
+    branches: [ "main" ]  # Or "master"
+
+jobs:
+  deploy:
+    runs-on: self-hosted  # <--- This connects to your laptop runner!
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Stop Old Containers
+        run: docker compose down || true
+
+      - name: Start New Stack
+        run: docker compose up --build -d
+
+      - name: Clean up unused images
+        run: docker image prune -f
