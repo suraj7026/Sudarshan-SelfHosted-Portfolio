@@ -9,10 +9,7 @@ services:
     ports:
       - "8080:8080" # Backend also exposed internally
     environment:
-      - DATABASE_URL="postgres://surajpostgresdb:suraj2308%40postgres@100.124.35.7:5432/suraj_website"
-      - DB_HOST=172.17.0.1 # Connect to Host Postgres
-      - DB_USER=surajpostgresdb
-      - DB_PASS=suraj2308
+      - DATABASE_URL="postgres://surajpostgresdb:suraj2308%40postgres@172.17.0.1:5432/suraj_website"
 
   gateway:
     image: nginx:alpine
