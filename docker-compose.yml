@@ -1,0 +1,25 @@
+services:
+  frontend:
+    build: ./frontend
+    restart: always
+
+  backend:
+    build: ./backend
+    restart: always
+    ports:
+      - "8080:8080" # Backend also exposed internally
+    environment:
+      - DB_HOST=172.17.0.1 # Connect to Host Postgres
+      - DB_USER=surajpostgresdb
+      - DB_PASS=suraj2308
+
+  gateway:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "3000:80" # Cloudflare Tunnel hits this!
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - backend
