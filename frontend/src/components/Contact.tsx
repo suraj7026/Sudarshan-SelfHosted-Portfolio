@@ -35,10 +35,10 @@ const Contact: React.FC = () => {
                             <a href="mailto:sudarshanr2308@gmail.com" className="contact-method-link">
                                 <FaEnvelope /> sudarshanr2308@gmail.com
                             </a>
-                            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="contact-method-link">
+                            <a href="https://www.linkedin.com/in/sudarshan-rajagopalan/" target="_blank" rel="noopener noreferrer" className="contact-method-link">
                                 <FaLinkedin /> LinkedIn Profile
                             </a>
-                            <a href="https://github.com/Sudarshan-Rajagopalan" target="_blank" rel="noopener noreferrer" className="contact-method-link">
+                            <a href="https://github.com/suraj7026" target="_blank" rel="noopener noreferrer" className="contact-method-link">
                                 <FaGithub /> GitHub Profile
                             </a>
                         </div>

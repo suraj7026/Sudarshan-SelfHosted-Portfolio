@@ -80,8 +80,8 @@ const About: React.FC = () => {
                     <div className="hero-info-block">
                         <h3 className="hero-info-title">FOLLOW ME</h3>
                         <div className="hero-socials">
-                            <a href="https://github.com/Sudarshan-Rajagopalan" target="_blank" rel="noopener noreferrer"><FaGithub /></a>
-                            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer"><FaLinkedin /></a>
+                            <a href="https://github.com/suraj7026" target="_blank" rel="noopener noreferrer"><FaGithub /></a>
+                            <a href="https://www.linkedin.com/in/sudarshan-rajagopalan/" target="_blank" rel="noopener noreferrer"><FaLinkedin /></a>
                             <a href="https://twitter.com" aria-label="Twitter" target="_blank" rel="noopener noreferrer"><FaTwitter /></a>
                             <a href="https://instagram.com" aria-label="Instagram" target="_blank" rel="noopener noreferrer"><FaInstagram /></a>
                         </div>
