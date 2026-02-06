@@ -198,7 +198,12 @@ async def minio_webhook(request: Request, background_tasks: BackgroundTasks):
         logger.debug(f"Payload: {payload}")
         return {"status": "error", "message": "Could not extract file key"}
     
-    logger.info(f"📁 File key: {file_key}")
+    logger.info(f"📁 Raw file key: {file_key}")
+    
+    # Fix: MinIO sends "bucketname/resume/file.pdf", but we only want "resume/file.pdf"
+    if file_key.startswith(f"{BUCKET_NAME}/"):
+        file_key = file_key.replace(f"{BUCKET_NAME}/", "", 1)
+        logger.info(f"📁 Stripped bucket prefix, file key: {file_key}")
     
     # Filter: Only process resume/*.pdf files
     # Check for "/resume/" anywhere in the path (handles full bucket paths like surajwebsite/resume/file.pdf)
