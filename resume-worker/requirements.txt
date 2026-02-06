@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+boto3
+pymupdf
+python-dotenv
+google-generativeai
+psycopg2-binary
+requests
+langchain-google-genai
+langchain-core
+langgraph

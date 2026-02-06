@@ -21,3 +21,17 @@ services:
     depends_on:
       - frontend
       - backend
+
+  resume-worker:
+    build: ./resume-worker
+    container_name: resume-processor
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - DATABASE_URL=postgres://surajpostgresdb:suraj2308%40postgres@172.17.0.1:5432/surajpostgresdb?sslmode=disable
+      - MINIO_ENDPOINT=http://172.17.0.1:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - BUCKET_NAME=surajwebsite
