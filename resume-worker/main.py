@@ -201,13 +201,17 @@ async def minio_webhook(request: Request, background_tasks: BackgroundTasks):
     logger.info(f"📁 File key: {file_key}")
     
     # Filter: Only process resume/*.pdf files
-    if not file_key.startswith("resume/"):
+    # Check for "/resume/" anywhere in the path (handles full bucket paths like surajwebsite/resume/file.pdf)
+    if "/resume/" not in file_key and not file_key.startswith("resume/"):
         logger.info(f"⏭️ Ignoring file outside resume/ folder: {file_key}")
         return {"status": "ignored", "reason": "File not in resume/ folder"}
     
     if not file_key.lower().endswith(".pdf"):
         logger.info(f"⏭️ Ignoring non-PDF file: {file_key}")
         return {"status": "ignored", "reason": "File is not a PDF"}
+    
+    # Log the trigger
+    logger.info(f"🔔 Triggered: {file_key}")
     
     # Add processing job to background tasks
     logger.info(f"✅ Queuing resume processing job for: {file_key}")
