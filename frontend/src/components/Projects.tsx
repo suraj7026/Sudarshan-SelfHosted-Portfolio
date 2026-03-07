@@ -6,9 +6,8 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperClass } from 'swiper';
 // Import Swiper styles
 import 'swiper/css';
-import 'swiper/css/effect-cards';
 // import required modules
-import { EffectCards, Autoplay, Keyboard, Mousewheel, Pagination } from 'swiper/modules';
+import { Autoplay, Keyboard, Mousewheel, Pagination } from 'swiper/modules';
 import 'swiper/css/pagination';
 
 // Icon mapping based on project title or keywords
@@ -86,11 +85,15 @@ const Projects: React.FC = () => {
                     </h2>
                 </div>
 
-                <div style={{ width: '100%', maxWidth: '500px', padding: '20px 0' }}>
+                <div style={{ width: '100%', padding: '20px 0' }}>
                     <Swiper
-                        effect={'cards'}
+                        breakpoints={{
+                            320: { slidesPerView: 1.1, spaceBetween: 16 },
+                            640: { slidesPerView: 2, spaceBetween: 24 },
+                            1024: { slidesPerView: 3, spaceBetween: 30 }
+                        }}
                         grabCursor={true}
-                        modules={[EffectCards, Autoplay, Keyboard, Mousewheel, Pagination]}
+                        modules={[Autoplay, Keyboard, Mousewheel, Pagination]}
                         pagination={{
                             clickable: true,
                             dynamicBullets: true,
@@ -130,7 +133,9 @@ const Projects: React.FC = () => {
                                             boxShadow: 'var(--shadow-lg)',
                                             margin: 0,
                                             transform: 'none', // Override hover transform for swiper cards
-                                            cursor: project.repo_link ? 'pointer' : 'grab'
+                                            cursor: project.repo_link ? 'pointer' : 'grab',
+                                            display: 'flex',
+                                            flexDirection: 'column'
                                         }}
                                         onClick={() => {
                                             if (project.repo_link) {
@@ -145,23 +150,22 @@ const Projects: React.FC = () => {
                                             }}>
                                                 {icon}
                                             </div>
-                                            <div className="project-tags-group">
-                                                {project.tech_stack?.map(t => (
-                                                    <span key={t} className="project-tag-pill">{t}</span>
-                                                ))}
-                                            </div>
                                         </div>
 
                                         <h3 className="project-title">{project.title}</h3>
-                                        <p className="project-desc">{project.description}</p>
+                                        <p className="project-desc" style={{ flexGrow: 1, marginBottom: 'var(--spacing-lg)' }}>{project.description}</p>
 
-
+                                        <div className="project-tags-group" style={{ marginBottom: 'var(--spacing-lg)', marginTop: 'auto' }}>
+                                            {project.tech_stack?.map(t => (
+                                                <span key={t} className="project-tag-pill">{t}</span>
+                                            ))}
+                                        </div>
 
                                         {/* Project Links Footer */}
                                         <div style={{
                                             display: 'flex',
                                             gap: 'var(--spacing-md)',
-                                            marginTop: 'var(--spacing-lg)',
+                                            marginTop: 'var(--spacing-sm)',
                                             alignItems: 'center'
                                         }}>
                                             {project.repo_link && (
