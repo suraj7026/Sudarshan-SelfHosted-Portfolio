@@ -6,8 +6,9 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperClass } from 'swiper';
 // Import Swiper styles
 import 'swiper/css';
+import 'swiper/css/effect-cards';
 // import required modules
-import { Autoplay, Keyboard, Mousewheel, Pagination } from 'swiper/modules';
+import { EffectCards, Autoplay, Keyboard, Mousewheel, Pagination } from 'swiper/modules';
 import 'swiper/css/pagination';
 
 // Icon mapping based on project title or keywords
@@ -85,15 +86,11 @@ const Projects: React.FC = () => {
                     </h2>
                 </div>
 
-                <div style={{ width: '100%', padding: '20px 0' }}>
+                <div style={{ width: '100%', maxWidth: '450px', padding: '20px 0' }}>
                     <Swiper
-                        breakpoints={{
-                            320: { slidesPerView: 1.1, spaceBetween: 16 },
-                            640: { slidesPerView: 2, spaceBetween: 24 },
-                            1024: { slidesPerView: 3, spaceBetween: 30 }
-                        }}
+                        effect={'cards'}
                         grabCursor={true}
-                        modules={[Autoplay, Keyboard, Mousewheel, Pagination]}
+                        modules={[EffectCards, Autoplay, Keyboard, Mousewheel, Pagination]}
                         pagination={{
                             clickable: true,
                             dynamicBullets: true,
@@ -153,7 +150,7 @@ const Projects: React.FC = () => {
                                         </div>
 
                                         <h3 className="project-title">{project.title}</h3>
-                                        <p className="project-desc" style={{ flexGrow: 1, marginBottom: 'var(--spacing-lg)' }}>{project.description}</p>
+                                        <p className="project-desc" style={{ flexGrow: 1, marginBottom: 'var(--spacing-lg)', overflowY: 'auto', paddingRight: '8px' }}>{project.description}</p>
 
                                         <div className="project-tags-group" style={{ marginBottom: 'var(--spacing-lg)', marginTop: 'auto' }}>
                                             {project.tech_stack?.map(t => (

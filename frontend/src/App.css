@@ -1360,12 +1360,30 @@ main {
 /* Swiper Custom Styles */
 .projects-swiper {
   width: 100%;
-  min-height: 480px;
+  height: 450px;
   padding-bottom: 60px !important;
   /* Space for pagination */
   padding-top: 20px !important;
   padding-left: 10px !important;
   padding-right: 10px !important;
+}
+
+/* Custom Scrollbar for Project Descriptions */
+.project-desc::-webkit-scrollbar {
+  width: 4px;
+}
+
+.project-desc::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.project-desc::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+.project-desc::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
 }
 
 .projects-swiper .swiper-slide {
