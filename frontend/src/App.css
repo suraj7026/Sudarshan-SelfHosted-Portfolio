@@ -1386,6 +1386,23 @@ main {
   background: var(--color-text-tertiary);
 }
 
+.project-desc.project-desc-list {
+  padding-left: 24px;
+  list-style-type: none;
+}
+
+.project-desc.project-desc-list li {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.project-desc.project-desc-list li::before {
+  content: "▹";
+  position: absolute;
+  left: -20px;
+  color: var(--color-accent);
+}
+
 .projects-swiper .swiper-slide {
   display: flex;
   height: auto;

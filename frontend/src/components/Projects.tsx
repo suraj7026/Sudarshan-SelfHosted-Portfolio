@@ -41,6 +41,13 @@ const getProjectColor = (index: number, title: string): string => {
 const Projects: React.FC = () => {
     const [projects, setProjects] = useState<ProjectType[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         const loadProjects = async () => {
@@ -86,9 +93,11 @@ const Projects: React.FC = () => {
                     </h2>
                 </div>
 
-                <div style={{ width: '100%', maxWidth: '450px', padding: '20px 0' }}>
+                <div style={{ width: '100%', maxWidth: isMobile ? '450px' : '100%', padding: '20px 0' }}>
                     <Swiper
-                        effect={'cards'}
+                        effect={isMobile ? 'cards' : undefined}
+                        slidesPerView={isMobile ? 1 : 'auto'}
+                        spaceBetween={isMobile ? 0 : 30}
                         grabCursor={true}
                         modules={[EffectCards, Autoplay, Keyboard, Mousewheel, Pagination]}
                         pagination={{
@@ -105,7 +114,7 @@ const Projects: React.FC = () => {
                         mousewheel={{
                             forceToAxis: true,
                         }}
-                        className="mySwiper projects-swiper"
+                        className={`mySwiper projects-swiper ${isMobile ? '' : 'desktop-swiper'}`}
                         onSlideChange={(swiper: SwiperClass) => {
                             const color = getProjectColor(projects.length > 0 ? swiper.realIndex : 0, projects[swiper.realIndex]?.title || '');
                             swiper.el.style.setProperty('--active-project-color', color);
@@ -122,7 +131,7 @@ const Projects: React.FC = () => {
                             const icon = getProjectIcon(project.title);
 
                             return (
-                                <SwiperSlide key={project.id} style={{ display: 'flex', height: 'auto', alignSelf: 'stretch' }}>
+                                <SwiperSlide key={project.id} style={{ display: 'flex', height: 'auto', alignSelf: 'stretch', width: isMobile ? '100%' : '500px' }}>
                                     <div
                                         className={`project-card ${project.featured ? 'featured' : ''}`}
                                         style={{
@@ -132,7 +141,8 @@ const Projects: React.FC = () => {
                                             transform: 'none', // Override hover transform for swiper cards
                                             cursor: project.repo_link ? 'pointer' : 'grab',
                                             display: 'flex',
-                                            flexDirection: 'column'
+                                            flexDirection: 'column',
+                                            width: '100%'
                                         }}
                                         onClick={() => {
                                             if (project.repo_link) {
@@ -150,7 +160,15 @@ const Projects: React.FC = () => {
                                         </div>
 
                                         <h3 className="project-title">{project.title}</h3>
-                                        <p className="project-desc" style={{ flexGrow: 1, marginBottom: 'var(--spacing-lg)', overflowY: 'auto', paddingRight: '8px' }}>{project.description}</p>
+                                        {project.description.includes('•') ? (
+                                            <ul className="project-desc project-desc-list" style={{ flexGrow: 1, marginBottom: 'var(--spacing-lg)', overflowY: 'auto', paddingRight: '8px' }}>
+                                                {project.description.split('•').filter(p => p.trim()).map((point, i) => (
+                                                    <li key={i}>{point.trim()}</li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="project-desc" style={{ flexGrow: 1, marginBottom: 'var(--spacing-lg)', overflowY: 'auto', paddingRight: '8px' }}>{project.description}</p>
+                                        )}
 
                                         <div className="project-tags-group" style={{ marginBottom: 'var(--spacing-lg)', marginTop: 'auto' }}>
                                             {project.tech_stack?.map(t => (

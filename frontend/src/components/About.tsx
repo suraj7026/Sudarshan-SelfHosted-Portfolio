@@ -57,7 +57,6 @@ const About: React.FC = () => {
                         <h3 className="hero-info-title">ABOUT ME</h3>
                         <p className="hero-info-text">
                             Passionate about end-to-end ownership and building AI-powered applications, including RAG systems and LLM-based agents.
-                            Currently working at Norstella to reduce processing times by 95% using GenAI.
                         </p>
                         <a href="#experience" className="hero-link">
                             LEARN MORE <FaArrowRight />
