@@ -33,7 +33,7 @@ const Header: React.FC = () => {
 
     return (
         <header className="header">
-            <div className="container header-content">
+            <div className="header-content">
                 <div className="logo">
                     <a href="/" className="logo-link">
                         <img src={PROFILE_IMAGE_URL} alt="SR" className="header-profile-img" />
