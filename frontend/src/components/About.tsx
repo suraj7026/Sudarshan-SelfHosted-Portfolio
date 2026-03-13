@@ -30,7 +30,7 @@ const About: React.FC = () => {
                             <span className="text-accent">Software Engineer</span>
                         </h1>
                         <p className="hero-subtitle">
-                            Building scalable AI/ML systems and intelligent agents since 2021.
+                            Software Development Engineer specializing in scalable backend systems, AI applications, and cloud infrastructure.
                         </p>
 
                         <div className="hero-scroll-btn-wrapper">
@@ -56,7 +56,7 @@ const About: React.FC = () => {
                     <div className="hero-info-block">
                         <h3 className="hero-info-title">ABOUT ME</h3>
                         <p className="hero-info-text">
-                            Passionate about architecting RAG-powered systems and optimizing AI pipelines.
+                            Passionate about end-to-end ownership and building AI-powered applications, including RAG systems and LLM-based agents.
                             Currently working at Norstella to reduce processing times by 95% using GenAI.
                         </p>
                         <a href="#experience" className="hero-link">
@@ -68,8 +68,8 @@ const About: React.FC = () => {
                     <div className="hero-info-block">
                         <h3 className="hero-info-title">MY WORK</h3>
                         <p className="hero-info-text">
-                            From automated pipelines to generative AI dashboards, I specialize in
-                            end-to-end ML solutions and full-stack development.
+                            From designing high-performance APIs to automating cloud infrastructure, I specialize in
+                            scalable microservices, modern DevOps practices, and end-to-end machine learning solutions.
                         </p>
                         <a href="#projects" className="hero-link">
                             BROWSE PORTFOLIO <FaArrowRight />

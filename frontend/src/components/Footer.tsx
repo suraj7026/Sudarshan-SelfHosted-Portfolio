@@ -13,7 +13,7 @@ const Footer: React.FC = () => {
                             <img src={PROFILE_IMAGE_URL} alt="Sudarshan Rajagopalan" className="footer-profile-img" />
                             <div>
                                 <h3 className="footer-name">Sudarshan Rajagopalan</h3>
-                                <p className="footer-role">Software Engineer & AI Specialist</p>
+                                <p className="footer-role">Software Engineer</p>
                             </div>
                         </div>
                         <div className="footer-socials">
