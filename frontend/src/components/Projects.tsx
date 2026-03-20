@@ -8,7 +8,7 @@ import type { Swiper as SwiperClass } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/effect-cards';
 // import required modules
-import { EffectCards, Autoplay, Keyboard, Mousewheel, Pagination } from 'swiper/modules';
+import { EffectCards, Keyboard, Mousewheel, Pagination } from 'swiper/modules';
 import 'swiper/css/pagination';
 
 // Icon mapping based on project title or keywords
@@ -99,14 +99,10 @@ const Projects: React.FC = () => {
                         slidesPerView={isMobile ? 1 : 'auto'}
                         spaceBetween={isMobile ? 0 : 30}
                         grabCursor={true}
-                        modules={[EffectCards, Autoplay, Keyboard, Mousewheel, Pagination]}
+                        modules={[EffectCards, Keyboard, Mousewheel, Pagination]}
                         pagination={{
                             clickable: true,
                             dynamicBullets: true,
-                        }}
-                        autoplay={{
-                            delay: 4000,
-                            disableOnInteraction: false,
                         }}
                         keyboard={{
                             enabled: true,
