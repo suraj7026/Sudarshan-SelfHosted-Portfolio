@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaArrowRight, FaArrowDown, FaGithub, FaLinkedin, FaTwitter, FaInstagram } from 'react-icons/fa';
+import { FaArrowRight, FaArrowDown, FaGithub, FaLinkedin } from 'react-icons/fa';
 import { PROFILE_IMAGE_NO_BG_URL } from '../config/minio';
 import { fetchExperience, Experience } from '../services/api';
 
@@ -81,8 +81,7 @@ const About: React.FC = () => {
                         <div className="hero-socials">
                             <a href="https://github.com/suraj7026" target="_blank" rel="noopener noreferrer"><FaGithub /></a>
                             <a href="https://www.linkedin.com/in/sudarshan-rajagopalan/" target="_blank" rel="noopener noreferrer"><FaLinkedin /></a>
-                            <a href="https://twitter.com" aria-label="Twitter" target="_blank" rel="noopener noreferrer"><FaTwitter /></a>
-                            <a href="https://instagram.com" aria-label="Instagram" target="_blank" rel="noopener noreferrer"><FaInstagram /></a>
+
                         </div>
                     </div>
                 </div>
