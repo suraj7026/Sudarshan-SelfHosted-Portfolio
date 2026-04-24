@@ -160,7 +160,7 @@ async def minio_webhook(request: Request, background_tasks: BackgroundTasks):
     """
     Handle MinIO webhook events.
     
-    Only processes ObjectCreated:Put events for files matching:
+    Only processes ObjectCreated events for files matching:
     - Prefix: resume/
     - Suffix: .pdf
     """
@@ -170,13 +170,19 @@ async def minio_webhook(request: Request, background_tasks: BackgroundTasks):
         logger.error(f"❌ Failed to parse JSON payload: {e}")
         return {"status": "error", "message": "Invalid JSON payload"}
     
+    # MinIO may send the event name at the top level or inside S3-style Records.
+    record = payload["Records"][0] if isinstance(payload.get("Records"), list) and payload["Records"] else None
+    event_name = payload.get("EventName")
+    if not event_name and record:
+        event_name = record.get("eventName")
+    event_name = event_name or "unknown"
+
     # Log incoming event
-    event_name = payload.get("EventName", "unknown")
     logger.info(f"📨 Received webhook event: {event_name}")
     
-    # Validate event type - must be ObjectCreated:Put
-    if "ObjectCreated:Put" not in event_name and "s3:ObjectCreated:Put" not in event_name:
-        logger.info(f"⏭️ Ignoring non-put event: {event_name}")
+    # Accept all object creation variants such as Put, Post, and CompleteMultipartUpload.
+    if "ObjectCreated" not in event_name:
+        logger.info(f"⏭️ Ignoring non-object-created event: {event_name}")
         return {"status": "ignored", "reason": f"Event type not supported: {event_name}"}
     
     # Extract object key from payload
@@ -188,10 +194,8 @@ async def minio_webhook(request: Request, background_tasks: BackgroundTasks):
         file_key = unquote(payload["Key"])
     
     # Format 2: Nested in Records array (S3-compatible format)
-    elif "Records" in payload and len(payload["Records"]) > 0:
-        record = payload["Records"][0]
-        if "s3" in record and "object" in record["s3"]:
-            file_key = unquote(record["s3"]["object"].get("key", ""))
+    elif record and "s3" in record and "object" in record["s3"]:
+        file_key = unquote(record["s3"]["object"].get("key", ""))
     
     if not file_key:
         logger.warning("⚠️ Could not extract file key from payload")
