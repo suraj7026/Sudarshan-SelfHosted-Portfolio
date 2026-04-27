@@ -38,7 +38,7 @@ from langgraph.prebuilt import ToolNode
 load_dotenv()
 
 # Default settings
-DEFAULT_MODEL = "gemini-3-flash-preview"
+DEFAULT_MODEL = "gemini-3.1-flash-lite-preview"
 
 # Verbose mode
 VERBOSE = True
@@ -75,7 +75,7 @@ class IStateObserver(Protocol):
 @dataclass
 class AgentConfig:
     """Configuration for ResumeUpdateAgent."""
-    model_name: str = "gemini-3-flash-preview"
+    model_name: str = "gemini-3.1-flash-lite-preview"
     google_api_key: Optional[str] = None
     database_url: Optional[str] = None
     temperature: float = 0
@@ -86,7 +86,7 @@ class AgentConfig:
     def from_env(cls) -> "AgentConfig":
         """Load configuration from environment variables."""
         return cls(
-            model_name=os.getenv("GEMINI_MODEL", "gemini-3-flash-preview"),
+            model_name=os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite-preview"),
             google_api_key=os.getenv("GOOGLE_API_KEY"),
             database_url=os.getenv("DATABASE_URL"),
         )

@@ -20,7 +20,7 @@ DB_CONFIG = {
 }
 
 PDF_PATH = "/Users/sudarshanrajagopalan/Developer/Sudarshan-SelfHosted-Portfolio/data/SUDARSHAN-RAJAGOPALAN-Resume.pdf"
-MODEL_ID = "gemini-3-flash-preview" 
+MODEL_ID = "gemini-3.1-flash-lite-preview" 
 
 # --- 1. Database Fetching ---
 def get_current_db_state(cursor):
