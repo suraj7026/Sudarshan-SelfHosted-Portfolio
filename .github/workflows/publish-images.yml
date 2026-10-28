@@ -1,0 +1,108 @@
+name: Publish Portfolio candidate images
+on:
+  push:
+    branches: [migration/image-publication]
+    paths: [.github/workflows/publish-images.yml, deploy/publication/**]
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: portfolio-candidate-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+      - name: Build candidates with secret-excluding contexts
+        run: |
+          set -Eeuo pipefail
+          for component in frontend backend gateway resume-worker; do
+            cmp deploy/publication/context.dockerignore "deploy/publication/$component.Dockerfile.dockerignore"
+            docker build --platform linux/amd64 -f "deploy/publication/$component.Dockerfile" \
+              --label org.opencontainers.image.source=https://github.com/suraj7026/Sudarshan-SelfHosted-Portfolio \
+              --label org.opencontainers.image.revision="$GITHUB_SHA" \
+              -t "ghcr.io/suraj7026/portfolio-$component:candidate-$GITHUB_SHA" .
+          done
+      - name: Check resume imports and webhook filtering offline
+        run: |
+          set -Eeuo pipefail
+          image="ghcr.io/suraj7026/portfolio-resume-worker:candidate-$GITHUB_SHA"
+          docker run --name resume-import-check --network none --read-only --tmpfs /tmp \
+            --cap-drop ALL --security-opt no-new-privileges --memory=768m --cpus=1 \
+            --entrypoint python "$image" -c 'import ResumeAgent; print("ResumeAgent import passed; no agent instantiated")'
+          docker run --name resume-contract-check --network none --read-only --tmpfs /tmp \
+            --cap-drop ALL --security-opt no-new-privileges --memory=768m --cpus=1 \
+            -e PYTHONPATH=/app -e MINIO_ENDPOINT=http://127.0.0.1:9 \
+            -e MINIO_ACCESS_KEY=ci-only -e MINIO_SECRET_KEY=ci-only -e BUCKET_NAME=surajwebsite \
+            -v "$PWD/deploy/publication/test_resume.py:/checks/test_resume.py:ro" \
+            --entrypoint python "$image" -m unittest discover -s /checks -p test_resume.py -v
+      - name: Start disposable web-tier dependencies
+        run: |
+          set -Eeuo pipefail
+          docker network create --internal portfolio-publication
+          docker run -d --name portfolio-ci-db --network portfolio-publication \
+            -e POSTGRES_PASSWORD=ci-only -e POSTGRES_DB=portfolio_ci \
+            -v "$PWD/deploy/publication/fixture.sql:/docker-entrypoint-initdb.d/fixture.sql:ro" postgres:16
+          ready=false
+          for attempt in $(seq 1 60); do
+            if docker exec portfolio-ci-db pg_isready -h 127.0.0.1 -U postgres >/dev/null 2>&1; then ready=true; break; fi
+            sleep 1
+          done
+          test "$ready" = true
+          docker run -d --name minio --network portfolio-publication \
+            --read-only --cap-drop ALL --security-opt no-new-privileges --tmpfs /tmp \
+            -v "$PWD/deploy/publication/mock-minio.conf:/etc/nginx/conf.d/default.conf:ro" \
+            nginxinc/nginx-unprivileged@sha256:e2a8fca8aa356d66159aaf8a877a9c126773635adf210503eefaaeaffeed6ad7
+          docker run -d --name backend --network portfolio-publication \
+            --read-only --cap-drop ALL --security-opt no-new-privileges --tmpfs /tmp --memory=256m --cpus=0.5 \
+            -e DATABASE_URL=postgres://postgres:ci-only@portfolio-ci-db:5432/portfolio_ci?sslmode=disable \
+            "ghcr.io/suraj7026/portfolio-backend:candidate-$GITHUB_SHA"
+          docker run -d --name frontend --network portfolio-publication \
+            --read-only --cap-drop ALL --security-opt no-new-privileges --tmpfs /tmp --memory=128m --cpus=0.25 \
+            "ghcr.io/suraj7026/portfolio-frontend:candidate-$GITHUB_SHA"
+          docker run -d --name portfolio-gateway-check --network portfolio-publication \
+            --read-only --cap-drop ALL --security-opt no-new-privileges --tmpfs /tmp --memory=128m --cpus=0.25 \
+            -p 127.0.0.1:13000:8080 "ghcr.io/suraj7026/portfolio-gateway:candidate-$GITHUB_SHA"
+          ready=false
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --max-time 2 http://127.0.0.1:13000/api/v1/profile >/dev/null; then ready=true; break; fi
+            sleep 1
+          done
+          test "$ready" = true
+      - name: Validate functional responses and image isolation
+        run: |
+          set -Eeuo pipefail
+          node deploy/publication/check.mjs http://127.0.0.1:13000
+          for component in frontend backend gateway resume-worker; do
+            docker run --name "isolation-$component" --network none --read-only --cap-drop ALL \
+              --security-opt no-new-privileges --entrypoint /bin/sh \
+              "ghcr.io/suraj7026/portfolio-$component:candidate-$GITHUB_SHA" \
+              -c 'test "$(id -u)" != 0 && test ! -f /app/.env && test ! -f /usr/share/nginx/html/.env'
+          done
+      - name: Publish candidates only after all checks pass
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          trap 'docker logout ghcr.io' EXIT
+          for component in frontend backend gateway resume-worker; do
+            image="ghcr.io/suraj7026/portfolio-$component:candidate-$GITHUB_SHA"
+            docker push "$image"
+            digest=$(docker buildx imagetools inspect "$image" --format '{{json .Manifest}}' | jq -r .digest)
+            [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+            printf 'PUBLISHED_IMAGE=ghcr.io/suraj7026/portfolio-%s@%s\n' "$component" "$digest"
+            printf 'Candidate: `ghcr.io/suraj7026/portfolio-%s@%s`\n' "$component" "$digest" >> "$GITHUB_STEP_SUMMARY"
+          done
+      - name: Stop disposable CI services
+        if: always()
+        run: |
+          for name in portfolio-gateway-check frontend backend minio portfolio-ci-db; do
+            if docker container inspect "$name" >/dev/null 2>&1; then docker stop --timeout 30 "$name"; fi
+          done
