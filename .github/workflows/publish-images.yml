@@ -100,6 +100,15 @@ jobs:
             printf 'PUBLISHED_IMAGE=ghcr.io/suraj7026/portfolio-%s@%s\n' "$component" "$digest"
             printf 'Candidate: `ghcr.io/suraj7026/portfolio-%s@%s`\n' "$component" "$digest" >> "$GITHUB_STEP_SUMMARY"
           done
+      - name: Diagnose failed isolated checks
+        if: failure()
+        run: |
+          docker ps -a --format '{{.Names}} {{.Status}}'
+          for name in portfolio-gateway-check frontend backend minio portfolio-ci-db; do
+            if docker container inspect "$name" >/dev/null 2>&1; then docker logs --tail 40 "$name"; fi
+          done
+          curl --verbose --max-time 5 http://127.0.0.1:13000/api/v1/profile || true
+          docker exec portfolio-gateway-check wget -S -O - http://backend:8080/api/v1/profile || true
       - name: Stop disposable CI services
         if: always()
         run: |
