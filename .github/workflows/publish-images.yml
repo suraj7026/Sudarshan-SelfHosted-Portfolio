@@ -68,17 +68,22 @@ jobs:
             "ghcr.io/suraj7026/portfolio-frontend:candidate-$GITHUB_SHA"
           docker run -d --name portfolio-gateway-check --network portfolio-publication \
             --read-only --cap-drop ALL --security-opt no-new-privileges --tmpfs /tmp --memory=128m --cpus=0.25 \
-            -p 127.0.0.1:13000:8080 "ghcr.io/suraj7026/portfolio-gateway:candidate-$GITHUB_SHA"
+            "ghcr.io/suraj7026/portfolio-gateway:candidate-$GITHUB_SHA"
           ready=false
           for attempt in $(seq 1 30); do
-            if curl --fail --silent --max-time 2 http://127.0.0.1:13000/api/v1/profile >/dev/null; then ready=true; break; fi
+            if docker exec portfolio-gateway-check wget -q -T 2 -O /dev/null http://127.0.0.1:8080/api/v1/profile; then ready=true; break; fi
             sleep 1
           done
           test "$ready" = true
       - name: Validate functional responses and image isolation
         run: |
           set -Eeuo pipefail
-          node deploy/publication/check.mjs http://127.0.0.1:13000
+          docker run --name portfolio-http-check --network portfolio-publication \
+            --user 1000:1000 --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --memory=256m --cpus=0.5 \
+            -v "$PWD/deploy/publication/check.mjs:/checks/check.mjs:ro" \
+            node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 \
+            node /checks/check.mjs http://portfolio-gateway-check:8080
           for component in frontend backend gateway resume-worker; do
             docker run --name "isolation-$component" --network none --read-only --cap-drop ALL \
               --security-opt no-new-privileges --entrypoint /bin/sh \
@@ -107,7 +112,7 @@ jobs:
           for name in portfolio-gateway-check frontend backend minio portfolio-ci-db; do
             if docker container inspect "$name" >/dev/null 2>&1; then docker logs --tail 40 "$name"; fi
           done
-          curl --verbose --max-time 5 http://127.0.0.1:13000/api/v1/profile || true
+          docker exec portfolio-gateway-check wget -S -O - http://127.0.0.1:8080/api/v1/profile || true
           docker exec portfolio-gateway-check wget -S -O - http://backend:8080/api/v1/profile || true
       - name: Stop disposable CI services
         if: always()
