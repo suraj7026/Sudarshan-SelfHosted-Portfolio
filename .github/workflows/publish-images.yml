@@ -2,7 +2,7 @@ name: Publish Portfolio candidate images
 on:
   push:
     branches: [migration/image-publication]
-    paths: [.github/workflows/publish-images.yml, deploy/publication/**]
+    paths: [.github/workflows/publish-images.yml, deploy/publication/**, frontend/package-lock.json]
   workflow_dispatch:
 permissions:
   contents: read
