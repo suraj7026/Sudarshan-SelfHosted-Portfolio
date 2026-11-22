@@ -473,6 +473,22 @@
   }
 }
 
+@media (max-width: 600px) {
+  .metro-hero-photo {
+    top: auto;
+    right: -24.55%;
+    bottom: calc(-1 * var(--spacing-2xl));
+    left: auto;
+    width: 100%;
+    height: initial;
+    aspect-ratio: 1;
+  }
+
+  .metro-hero-photo img {
+    filter: brightness(0.35);
+  }
+}
+
 /* Companies — a panorama strip, wider than the screen */
 .metro-companies {
   margin-top: var(--spacing-2xl);
