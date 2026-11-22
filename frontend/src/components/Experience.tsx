@@ -18,14 +18,22 @@ const Experience: React.FC = () => {
     `${formatDate(exp.start_date)} – ${exp.end_date ? formatDate(exp.end_date) : 'present'}`;
 
   return (
-    <section id="experience" className="metro-section">
+    <section id="experience" className="metro-section metro-t-section">
       <ParallaxWord word="work" />
       <div className="container">
-        <Reveal>
-          <SectionHeader title="experience" />
-        </Reveal>
+        <div className="metro-section-sidebar">
+          <Reveal>
+            <SectionHeader title="experience" />
+          </Reveal>
+        </div>
 
-        <div className="metro-experience-list">
+        <div
+          id="experience-strip"
+          className="metro-experience-list metro-vertical-scroll"
+          role="region"
+          aria-label="Experience, vertically scrollable"
+          tabIndex={0}
+        >
           {experiences.map((exp, index) => (
             <Reveal
               key={exp.id}

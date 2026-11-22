@@ -15,14 +15,10 @@ const About: React.FC = () => {
   useEffect(() => {
     const loadCompanies = async () => {
       const experiences = await fetchExperience();
-      const previous = Array.from(
-        new Set(
-          experiences
-            .filter((exp: Experience) => exp.company.toLowerCase() !== 'google')
-            .map((exp: Experience) => exp.company)
-        )
+      const allCompanies = Array.from(
+        new Set(experiences.map((exp: Experience) => exp.company))
       );
-      setCompanies(previous);
+      setCompanies(allCompanies);
     };
     loadCompanies();
   }, []);
@@ -34,18 +30,32 @@ const About: React.FC = () => {
           <div className="metro-hero-photo">
             <img src={profileImage} alt="Portrait of Sudarshan Rajagopalan" />
           </div>
-          <Reveal>
-          <h1 className="metro-hero-name">
-            <span>sudarshan</span>
-            <span>
-              rajagopalan<span className="metro-period" aria-hidden="true" />
-            </span>
-          </h1>
-          <p className="metro-hero-role">cloud ai engineer at google</p>
-          <p className="metro-hero-sub">
-            i build scalable backend systems, ai applications, and cloud infrastructure — end to end.
-          </p>
+          <Reveal className="metro-hero-copy">
+            <h1 className="metro-hero-name">
+              <span>sudarshan</span>
+              <span>
+                rajagopalan<span className="metro-period" aria-hidden="true" />
+              </span>
+            </h1>
+            <p className="metro-hero-role">cloud ai engineer at google</p>
+            <p className="metro-hero-sub">
+              i build scalable backend systems, ai applications, and cloud infrastructure — end to end.
+            </p>
           </Reveal>
+
+          {/* Companies panorama strip */}
+          {companies.length > 0 && (
+            <Reveal className="metro-companies" delay={0.1}>
+              <p className="metro-companies-label">previously worked at</p>
+              <div className="metro-companies-row">
+                {companies.map((company) => (
+                  <span key={company} className="metro-company">
+                    {company}
+                  </span>
+                ))}
+              </div>
+            </Reveal>
+          )}
         </div>
 
         {/* The start screen */}
@@ -122,20 +132,6 @@ const About: React.FC = () => {
             <span className="metro-resume-note">download the pdf</span>
           </a>
         </Reveal>
-
-        {/* Companies panorama — wider than the screen */}
-        {companies.length > 0 && (
-          <Reveal className="metro-companies" delay={0.1}>
-            <p className="metro-companies-label">previously worked at</p>
-            <div className="metro-companies-row">
-              {companies.map((company) => (
-                <span key={company} className="metro-company">
-                  {company}
-                </span>
-              ))}
-            </div>
-          </Reveal>
-        )}
       </div>
     </section>
   );

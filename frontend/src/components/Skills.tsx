@@ -96,48 +96,45 @@ const Skills: React.FC = () => {
 
   const selectCategory = (category: string) => {
     setSelectedCategory(category);
-    skillStrip.current?.scrollTo({ left: 0 });
-  };
-
-  const scrollSkills = (direction: number) => {
-    const strip = skillStrip.current;
-    if (strip) strip.scrollBy({ left: direction * strip.clientWidth * 0.8, behavior: 'smooth' });
+    skillStrip.current?.scrollTo({ top: 0 });
   };
 
   return (
-    <section id="skills" className="metro-section">
+    <section id="skills" className="metro-section metro-skills-section">
       <ParallaxWord word="skills" />
       <div className="container">
-        <Reveal>
-          <SectionHeader title="skills" />
-        </Reveal>
+        <div className="metro-skills-sidebar">
+          <Reveal>
+            <SectionHeader title="skills" />
+          </Reveal>
 
-        {/* WP10-style pivot tabs */}
-        <Reveal delay={0.1}>
-          <div className="metro-pivot" role="group" aria-label="Skill categories">
-            <button
-              type="button"
-              className={`metro-pivot-item${selectedCategory === 'all' ? ' metro-pivot-item--active' : ''}`}
-              aria-pressed={selectedCategory === 'all'}
-              onClick={() => selectCategory('all')}
-            >
-              all
-            </button>
-            {categories.map((category) => (
+          {/* Vertical category rail to the left of the skills tile stream */}
+          <Reveal delay={0.1}>
+            <div className="metro-pivot" role="group" aria-label="Skill categories">
               <button
-                key={category}
                 type="button"
-                className={`metro-pivot-item${selectedCategory === category ? ' metro-pivot-item--active' : ''}`}
-                aria-pressed={selectedCategory === category}
-                onClick={() => selectCategory(category)}
+                className={`metro-pivot-item${selectedCategory === 'all' ? ' metro-pivot-item--active' : ''}`}
+                aria-pressed={selectedCategory === 'all'}
+                onClick={() => selectCategory('all')}
               >
-                {category.toLowerCase()}
+                all
               </button>
-            ))}
-          </div>
-        </Reveal>
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  className={`metro-pivot-item${selectedCategory === category ? ' metro-pivot-item--active' : ''}`}
+                  aria-pressed={selectedCategory === category}
+                  onClick={() => selectCategory(category)}
+                >
+                  {category.toLowerCase()}
+                </button>
+              ))}
+            </div>
+          </Reveal>
+        </div>
 
-        <div id="skill-strip" ref={skillStrip} className="metro-skill-grid" role="region" aria-label="Skills, horizontally scrollable" tabIndex={0}>
+        <div id="skill-strip" ref={skillStrip} className="metro-skill-grid metro-vertical-scroll" role="region" aria-label="Skills, vertically scrollable" tabIndex={0}>
           {filteredSkills.map((skill, index) => (
             <div key={skill.id} className={`metro-skill-item${index % 10 === 0 ? ' metro-skill-item--large' : index % 10 === 4 ? ' metro-skill-item--wide' : ''}`}>
               <div
@@ -161,13 +158,6 @@ const Skills: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
-        <div className="metro-skill-controls" aria-label="Scroll skills">
-          <span>scroll to explore</span>
-          <div>
-            <button type="button" onClick={() => scrollSkills(-1)} aria-label="Scroll skills left" aria-controls="skill-strip">←</button>
-            <button type="button" onClick={() => scrollSkills(1)} aria-label="Scroll skills right" aria-controls="skill-strip">→</button>
-          </div>
         </div>
       </div>
     </section>

@@ -42,7 +42,7 @@ export const Reveal: React.FC<RevealProps> = ({ className = '', delay = 0, child
           }
         });
       },
-      { threshold: 0.12, rootMargin: '0px 0px -32px 0px' }
+      { threshold: 0.01, rootMargin: '0px 120px 0px 120px' }
     );
     io.observe(el);
     return () => io.disconnect();
@@ -81,9 +81,9 @@ export const ParallaxWord: React.FC<ParallaxWordProps> = ({ word, speed = 0.14 }
       const parent = el.parentElement;
       if (!parent) return;
       const rect = parent.getBoundingClientRect();
-      const viewportH = window.innerHeight || 1;
-      const center = rect.top + rect.height / 2;
-      el.style.transform = `translate3d(0, ${((center - viewportH / 2) * speed).toFixed(1)}px, 0)`;
+      const viewportW = window.innerWidth || 1;
+      const center = rect.left + rect.width / 2;
+      el.style.transform = `translate3d(${((center - viewportW / 2) * speed).toFixed(1)}px, 0, 0)`;
     };
 
     const onScroll = () => {
@@ -91,10 +91,10 @@ export const ParallaxWord: React.FC<ParallaxWordProps> = ({ word, speed = 0.14 }
     };
 
     update();
-    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
     window.addEventListener('resize', onScroll);
     return () => {
-      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', onScroll, { capture: true } as EventListenerOptions);
       window.removeEventListener('resize', onScroll);
       if (raf) cancelAnimationFrame(raf);
     };

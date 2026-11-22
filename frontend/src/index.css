@@ -51,13 +51,16 @@ html {
   color: var(--color-fg);
   background-color: var(--color-bg);
   scroll-behavior: smooth;
-  scroll-padding-top: 72px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+  overflow: hidden;
 }
 
-body {
-  overflow-x: hidden;
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Metro selection: accent block, ink text */
@@ -129,10 +132,10 @@ p {
   color: var(--color-accent);
 }
 
-/* Metro entrance — content rises into place */
+/* Metro entrance — content glides into place along the panorama axis */
 .reveal {
   opacity: 0;
-  transform: translateY(26px);
+  transform: translateX(26px);
   transition:
     opacity var(--metro-slow) var(--metro-ease),
     transform var(--metro-slow) var(--metro-ease);

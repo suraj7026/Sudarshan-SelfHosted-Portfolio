@@ -15,14 +15,22 @@ const Projects: React.FC = () => {
   }, []);
 
   return (
-    <section id="projects" className="metro-section">
+    <section id="projects" className="metro-section metro-t-section">
       <ParallaxWord word="build" />
       <div className="container">
-        <Reveal>
-          <SectionHeader title="projects" />
-        </Reveal>
+        <div className="metro-section-sidebar">
+          <Reveal>
+            <SectionHeader title="projects" />
+          </Reveal>
+        </div>
 
-        <div className="metro-project-list">
+        <div
+          id="project-strip"
+          className="metro-project-list metro-vertical-scroll"
+          role="region"
+          aria-label="Projects, vertically scrollable"
+          tabIndex={0}
+        >
           {projects.map((project, index) => {
             const points = project.description
               .split('•')
