@@ -30,7 +30,7 @@ const Contact: React.FC = () => {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <span className="metro-resume-title">resume</span>
+              <span className="metro-resume-title">résumé</span>
               <span className="metro-resume-note">download the pdf</span>
             </a>
           </Reveal>

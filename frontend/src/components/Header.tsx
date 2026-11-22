@@ -45,7 +45,7 @@ const Header: React.FC = () => {
               rel="noopener noreferrer"
               className="metro-header-resume"
             >
-              resume
+              résumé
             </a>
           </nav>
 
@@ -83,7 +83,7 @@ const Header: React.FC = () => {
               className="metro-menu-link metro-menu-link-accent"
               onClick={() => setIsMenuOpen(false)}
             >
-              resume
+              résumé
             </a>
           </nav>
         </div>
