@@ -1,105 +1,144 @@
-import React, { useState, useEffect } from 'react';
-import { FaArrowRight, FaArrowDown, FaGithub, FaLinkedin } from 'react-icons/fa';
-import { PROFILE_IMAGE_NO_BG_URL } from '../config/minio';
+import React, { useEffect, useState } from 'react';
+import { RESUME_URL } from '../config/minio';
+import profileImage from '../assets/hero-profile.png';
+import experienceSnapshot from '../data/experience.json';
 import { fetchExperience, Experience } from '../services/api';
+import { Reveal, LiveTile } from './metro';
 
+/**
+ * The start screen: lock-screen typography, then a grid of live tiles —
+ * large, wide, and medium sizes like a WP8 home.
+ */
 const About: React.FC = () => {
-    const [companies, setCompanies] = useState<string[]>([]);
+  const [companies, setCompanies] = useState<string[]>(experienceSnapshot.map(exp => exp.company));
 
-    useEffect(() => {
-        const loadCompanies = async () => {
-            const experiences = await fetchExperience();
-            // Extract unique company names from experience data using Set
-            const uniqueCompanies = Array.from(new Set(experiences.map((exp: Experience) => exp.company)));
-            setCompanies(uniqueCompanies);
-        };
-        loadCompanies();
-    }, []);
+  useEffect(() => {
+    const loadCompanies = async () => {
+      const experiences = await fetchExperience();
+      const previous = Array.from(
+        new Set(
+          experiences
+            .filter((exp: Experience) => exp.company.toLowerCase() !== 'google')
+            .map((exp: Experience) => exp.company)
+        )
+      );
+      setCompanies(previous);
+    };
+    loadCompanies();
+  }, []);
 
-    return (
-        <section id="about" className="section hero-section">
-            <div className="container hero-container">
-                {/* 3-Column Grid */}
-                <div className="hero-grid">
+  return (
+    <section id="about" className="metro-section metro-hero">
+      <div className="container">
+        <div className="metro-hero-intro">
+          <div className="metro-hero-photo">
+            <img src={profileImage} alt="Portrait of Sudarshan Rajagopalan" />
+          </div>
+          <Reveal>
+          <h1 className="metro-hero-name">
+            <span>sudarshan</span>
+            <span>
+              rajagopalan<span className="metro-period" aria-hidden="true" />
+            </span>
+          </h1>
+          <p className="metro-hero-role">cloud ai engineer at google</p>
+          <p className="metro-hero-sub">
+            i build scalable backend systems, ai applications, and cloud infrastructure — end to end.
+          </p>
+          </Reveal>
+        </div>
 
-                    {/* Left Column: Intro & Scroll */}
-                    <div className="hero-left">
-                        <div className="hero-intro-line"></div>
-                        <h1 className="hero-title">
-                            I'm Sudarshan, a <br />
-                            <span className="text-accent">Software Engineer</span>
-                        </h1>
-                        <p className="hero-subtitle">
-                            Software Development Engineer specializing in scalable backend systems, AI applications, and cloud infrastructure.
-                        </p>
+        {/* The start screen */}
+        <Reveal className="metro-start" delay={0.15}>
+          {/* Wide live tile — cycles what i do */}
+          <LiveTile
+            className="metro-tile tile-whatido"
+            label="what i do"
+            items={['cloud ai systems', 'scalable backends', 'generative ai', 'devops automation']}
+          />
 
-                        <div className="hero-scroll-btn-wrapper">
-                            <a href="#projects" className="hero-scroll-btn" aria-label="Scroll down">
-                                <FaArrowDown />
-                            </a>
-                        </div>
-                    </div>
-
-                    {/* Center Column: Image */}
-                    <div className="hero-center">
-                        <div className="hero-image-wrapper">
-                            <img src={PROFILE_IMAGE_NO_BG_URL} alt="Sudarshan Rajagopalan" className="hero-img" />
-                            <div className="hero-img-glow"></div>
-                        </div>
-                    </div>
-
-                </div>
-
-                {/* Bottom Details Row (Horizontal) */}
-                <div className="hero-details-row">
-                    {/* About Me Block */}
-                    <div className="hero-info-block">
-                        <h3 className="hero-info-title">ABOUT ME</h3>
-                        <p className="hero-info-text">
-                            Passionate about end-to-end ownership and building AI-powered applications, including RAG systems and LLM-based agents.
-                        </p>
-                        <a href="#experience" className="hero-link">
-                            LEARN MORE <FaArrowRight />
-                        </a>
-                    </div>
-
-                    {/* My Work Block */}
-                    <div className="hero-info-block">
-                        <h3 className="hero-info-title">MY WORK</h3>
-                        <p className="hero-info-text">
-                            From designing high-performance APIs to automating cloud infrastructure, I specialize in
-                            scalable microservices, modern DevOps practices, and end-to-end machine learning solutions.
-                        </p>
-                        <a href="#projects" className="hero-link">
-                            BROWSE PORTFOLIO <FaArrowRight />
-                        </a>
-                    </div>
-
-                    {/* Follow Me Block */}
-                    <div className="hero-info-block">
-                        <h3 className="hero-info-title">FOLLOW ME</h3>
-                        <div className="hero-socials">
-                            <a href="https://github.com/suraj7026" target="_blank" rel="noopener noreferrer"><FaGithub /></a>
-                            <a href="https://www.linkedin.com/in/sudarshan-rajagopalan/" target="_blank" rel="noopener noreferrer"><FaLinkedin /></a>
-
-                        </div>
-                    </div>
-                </div>
+          {/* Medium status tile — the live update, glanceable */}
+          <div className="metro-tile tile-status">
+            <span className="metro-pulse" aria-hidden="true" />
+            <div className="metro-status-block">
+              <span className="metro-tile-label">new role</span>
+              <span className="metro-status-text">cloud ai engineer</span>
+              <span className="metro-status-sub">at google</span>
             </div>
+          </div>
 
-            {/* Previously Worked On Strip */}
-            <div className="companies-strip" style={{ marginTop: 'auto', paddingBottom: 'var(--spacing-xl)' }}>
-                <span className="companies-label">PREVIOUSLY WORKED AT</span>
-                <div className="companies-logos">
-                    {companies.map((company, index) => (
-                        <span key={index} className="company-logo">
-                            {company}
-                        </span>
-                    ))}
-                </div>
+          {/* Medium social tiles — type only */}
+          <a
+            className="metro-tile tile-social"
+            href="https://github.com/suraj7026"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span className="metro-tile-value">github</span>
+          </a>
+          <a
+            className="metro-tile tile-social"
+            href="https://www.linkedin.com/in/sudarshan-rajagopalan/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span className="metro-tile-value">linkedin</span>
+          </a>
+
+          {/* Wide text tiles */}
+          <div className="metro-tile tile-text tile-about">
+            <div>
+              <span className="metro-tile-label">about</span>
+              <p>
+                passionate about end-to-end ownership and building ai-powered applications, including
+                rag systems and llm-based agents.
+              </p>
             </div>
-        </section>
-    );
+            <a href="#experience" className="metro-tile-link">
+              more
+            </a>
+          </div>
+          <div className="metro-tile tile-text">
+            <div>
+              <span className="metro-tile-label">my work</span>
+              <p>
+                from high-performance apis to automated cloud infrastructure: scalable
+                microservices, modern devops, and end-to-end machine learning.
+              </p>
+            </div>
+            <a href="#projects" className="metro-tile-link">
+              portfolio
+            </a>
+          </div>
+
+          {/* Wide accent resume tile */}
+          <a
+            className="metro-tile metro-tile-accent tile-resume"
+            href={RESUME_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span className="metro-resume-title">resume</span>
+            <span className="metro-resume-note">download the pdf</span>
+          </a>
+        </Reveal>
+
+        {/* Companies panorama — wider than the screen */}
+        {companies.length > 0 && (
+          <Reveal className="metro-companies" delay={0.1}>
+            <p className="metro-companies-label">previously worked at</p>
+            <div className="metro-companies-row">
+              {companies.map((company) => (
+                <span key={company} className="metro-company">
+                  {company}
+                </span>
+              ))}
+            </div>
+          </Reveal>
+        )}
+      </div>
+    </section>
+  );
 };
 
 export default About;

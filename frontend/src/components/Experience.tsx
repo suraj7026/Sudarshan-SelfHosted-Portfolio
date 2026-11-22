@@ -1,87 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { fetchExperience, formatDate, Experience as ExperienceType } from '../services/api';
+import { Reveal, SectionHeader, ParallaxWord } from './metro';
+import experienceSnapshot from '../data/experience.json';
 
 const Experience: React.FC = () => {
-    const [experiences, setExperiences] = useState<ExperienceType[]>([]);
-    const [loading, setLoading] = useState(true);
+  const [experiences, setExperiences] = useState<ExperienceType[]>(experienceSnapshot);
 
-    useEffect(() => {
-        const loadExperiences = async () => {
-            const data = await fetchExperience();
-            setExperiences(data);
-            setLoading(false);
-        };
-        loadExperiences();
-    }, []);
-
-    // Format duration from API dates
-    const formatDuration = (startDate: string, endDate: string | null): string => {
-        return `${formatDate(startDate)} – ${formatDate(endDate)}`;
+  useEffect(() => {
+    const loadExperiences = async () => {
+      const data = await fetchExperience();
+      setExperiences(data);
     };
+    loadExperiences();
+  }, []);
 
-    if (loading) {
-        return (
-            <section id="experience" className="section">
-                <div className="container">
-                    <div style={{ textAlign: 'center', padding: 'var(--spacing-2xl)' }}>
-                        Loading...
+  const formatDuration = (exp: ExperienceType): string =>
+    `${formatDate(exp.start_date)} – ${exp.end_date ? formatDate(exp.end_date) : 'present'}`;
+
+  return (
+    <section id="experience" className="metro-section">
+      <ParallaxWord word="work" />
+      <div className="container">
+        <Reveal>
+          <SectionHeader title="experience" />
+        </Reveal>
+
+        <div className="metro-experience-list">
+          {experiences.map((exp, index) => (
+            <Reveal
+              key={exp.id}
+              delay={Math.min(index * 0.08, 0.4)}
+            >
+              <article className="metro-exp">
+                <div className="metro-exp-identity">
+                  <span className="metro-exp-mark" aria-hidden="true" />
+                  <h3 className="metro-exp-company">{exp.company}</h3>
+                </div>
+                <div className="metro-exp-content">
+                  <div className="metro-exp-head">
+                    <p className="metro-exp-role">{exp.role}</p>
+                    <div className="metro-exp-meta">
+                      <span className="metro-exp-when">{formatDuration(exp)}</span>
+                      {exp.location && <span className="metro-exp-where">{exp.location}</span>}
                     </div>
+                  </div>
+                  {exp.achievements?.length > 0 && (
+                    <ul className="metro-exp-points">
+                      {exp.achievements.map((achievement, i) => (
+                        <li key={i}>{achievement}</li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-            </section>
-        );
-    }
-
-    return (
-        <section id="experience" className="section">
-            <div className="container">
-                <div style={{ marginBottom: 'var(--spacing-2xl)' }}>
-                    <div style={{
-                        color: 'var(--color-accent)',
-                        fontSize: '0.9rem',
-                        fontWeight: '700',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.1em',
-                        marginBottom: 'var(--spacing-xs)'
-                    }}>
-                        / WORK EXPERIENCE
-                    </div>
-                    <h2 style={{ fontSize: '2.5rem', fontWeight: '800', margin: 0, color: 'var(--color-text-primary)' }}>
-                        My professional journey
-                    </h2>
-                </div>
-
-                <div className="experience-timeline">
-                    {/* Visual Vertical Line */}
-                    <div className="timeline-thread"></div>
-
-                    {experiences.map((exp, index) => (
-                        <div key={exp.id} className="timeline-card-wrapper" style={{ animationDelay: `${index * 0.2}s` }}>
-                            <div className="experience-card-thread">
-                                <div className="exp-header">
-                                    <div>
-                                        <h3 className="exp-company">{exp.company}</h3>
-                                        <div className="exp-role">{exp.role}</div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div className="exp-duration">{formatDuration(exp.start_date, exp.end_date)}</div>
-                                        <div style={{ fontSize: '0.85rem', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
-                                            {exp.location}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <ul className="exp-achievements">
-                                    {exp.achievements?.map((achievement, i) => (
-                                        <li key={i}>{achievement}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
+              </article>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 };
 
 export default Experience;

@@ -1,237 +1,152 @@
-"""
-Resume Worker - MinIO Webhook Handler
-
-FastAPI application that receives MinIO webhook events for PDF uploads,
-extracts text from the PDF, and triggers the ResumeAgent to update the portfolio database.
-"""
-
-import os
+"""Receive MinIO resume notifications and process them through a durable queue."""
 import logging
-from urllib.parse import unquote
-from typing import Any
+import os
+import sqlite3
+import tempfile
+import threading
+import time
+from contextlib import closing
+from urllib.parse import unquote_plus
 
-import fitz  # PyMuPDF
 import boto3
+import fitz
 from botocore.config import Config
-from fastapi import FastAPI, BackgroundTasks, Request
+from fastapi import FastAPI, HTTPException, Request
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
-
-# ============================================================================
-# CONFIGURATION
-# ============================================================================
-
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://172.17.0.1:9000")
-MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "admin")
-MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "YourStrongPassword")
-BUCKET_NAME = os.getenv("BUCKET_NAME", "surajwebsite")
-
-# ============================================================================
-# MINIO CLIENT
-# ============================================================================
-
-s3_client = boto3.client(
-    "s3",
-    endpoint_url=MINIO_ENDPOINT,
-    aws_access_key_id=MINIO_ACCESS_KEY,
-    aws_secret_access_key=MINIO_SECRET_KEY,
-    config=Config(signature_version="s3v4"),
-    verify=False  # For self-hosted SSL
-)
-
-# ============================================================================
-# HELPER FUNCTIONS
-# ============================================================================
-
-def extract_text_from_pdf(file_path: str) -> str:
-    """Extract text from a PDF file using PyMuPDF."""
-    logger.info(f"📄 Extracting text from: {file_path}")
-    
-    doc = fitz.open(file_path)
-    text_content = []
-    
-    for page_num, page in enumerate(doc, 1):
-        text = page.get_text()
-        text_content.append(f"--- Page {page_num} ---\n{text}")
-    
-    doc.close()
-    
-    full_text = "\n\n".join(text_content)
-    logger.info(f"✅ Extracted {len(full_text)} characters from {len(text_content)} pages")
-    return full_text
+BUCKET = os.getenv('BUCKET_NAME', 'surajwebsite')
+QUEUE_PATH = os.getenv('QUEUE_PATH', '/data/resume-jobs.sqlite3')
+s3 = boto3.client('s3', endpoint_url=os.getenv('MINIO_ENDPOINT', 'http://127.0.0.1:9000'),
+                  aws_access_key_id=os.environ['MINIO_ACCESS_KEY'], aws_secret_access_key=os.environ['MINIO_SECRET_KEY'],
+                  config=Config(signature_version='s3v4', connect_timeout=5, read_timeout=30, retries={'max_attempts': 2}))
+app = FastAPI(title='Resume Worker')
+stop_event = threading.Event()
 
 
-def process_resume_job(file_key: str) -> None:
-    """
-    Background task to process a resume PDF.
-    
-    1. Downloads the file from MinIO
-    2. Extracts text using PyMuPDF
-    3. Runs the ResumeAgent to update the portfolio database
-    4. Cleans up the temp file
-    """
-    temp_path = f"/tmp/{os.path.basename(file_key)}"
-    
+def connect_queue():
+    conn = sqlite3.connect(QUEUE_PATH, timeout=10)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def initialize_queue():
+    os.makedirs(os.path.dirname(os.path.abspath(QUEUE_PATH)), exist_ok=True)
+    with closing(connect_queue()) as conn, conn:
+        conn.execute('CREATE TABLE IF NOT EXISTS jobs (id INTEGER PRIMARY KEY, object_key TEXT NOT NULL, status TEXT NOT NULL DEFAULT "pending", attempts INTEGER NOT NULL DEFAULT 0, next_attempt REAL NOT NULL DEFAULT 0, error TEXT)')
+        conn.execute('UPDATE jobs SET status = "pending" WHERE status = "running"')
+
+
+def extract_text_from_pdf(path):
+    with fitz.open(path) as doc:
+        text = '\n\n'.join(page.get_text() for page in doc)
+    if not text.strip():
+        raise ValueError('PDF contains no extractable text')
+    return text
+
+
+def process_resume_job(key):
+    from ResumeAgent import update_portfolio_from_resume
+    with tempfile.TemporaryDirectory(prefix='resume-worker-') as directory:
+        path = os.path.join(directory, 'resume.pdf')
+        s3.download_file(BUCKET, key, path)
+        result = update_portfolio_from_resume(extract_text_from_pdf(path))
+        logger.info('Resume processing complete for %s: %s', key, result['summary'])
+
+
+def worker_loop():
+    while not stop_event.is_set():
+        job = None
+        try:
+            with closing(connect_queue()) as conn, conn:
+                job = conn.execute('SELECT * FROM jobs WHERE status = "pending" AND next_attempt <= ? ORDER BY id LIMIT 1', (time.time(),)).fetchone()
+                if job:
+                    conn.execute('UPDATE jobs SET status = "running", attempts = attempts + 1 WHERE id = ?', (job['id'],))
+            if not job:
+                stop_event.wait(2)
+                continue
+            logger.info('Processing job %s for %s', job['id'], job['object_key'])
+            process_resume_job(job['object_key'])
+            with closing(connect_queue()) as conn, conn:
+                conn.execute('UPDATE jobs SET status = "done", error = NULL WHERE id = ?', (job['id'],))
+        except Exception as exc:
+            logger.exception('Resume processing failed')
+            if job:
+                with closing(connect_queue()) as conn, conn:
+                    attempts = job['attempts'] + 1
+                    conn.execute('UPDATE jobs SET status = ?, next_attempt = ?, error = ? WHERE id = ?',
+                                 ('failed' if attempts >= 3 else 'pending', time.time() + 30 * attempts, str(exc)[:500], job['id']))
+            stop_event.wait(2)
+
+
+@app.on_event('startup')
+def startup():
+    initialize_queue()
+    stop_event.clear()
+    threading.Thread(target=worker_loop, name='resume-worker', daemon=True).start()
+
+
+@app.on_event('shutdown')
+def shutdown():
+    stop_event.set()
+
+
+@app.get('/health')
+def health():
     try:
-        logger.info(f"🚀 Starting resume processing for: {file_key}")
-        
-        # Step 1: Download file from MinIO
-        logger.info(f"⬇️ Downloading from MinIO: {BUCKET_NAME}/{file_key}")
-        s3_client.download_file(BUCKET_NAME, file_key, temp_path)
-        logger.info(f"✅ Downloaded to: {temp_path}")
-        
-        # Step 2: Extract text from PDF
-        resume_text = extract_text_from_pdf(temp_path)
-        
-        if not resume_text.strip():
-            logger.warning("⚠️ No text extracted from PDF")
-            return
-        
-        # Step 3: Run the ResumeAgent
-        logger.info("🤖 Running ResumeAgent...")
-        from ResumeAgent import update_portfolio_from_resume
-        
-        result = update_portfolio_from_resume(resume_text)
-        
-        # Log results
-        logger.info("=" * 60)
-        logger.info("🎯 RESUME PROCESSING COMPLETE")
-        logger.info("=" * 60)
-        logger.info(f"   Summary: {result.get('summary', 'N/A')}")
-        logger.info(f"   Changes Detected: {result.get('changes_detected', False)}")
-        logger.info(f"   SQL Queries Executed: {result.get('queries_executed', 0)}")
-        
-        if result.get('sql_queries'):
-            logger.info(f"   Updates Applied: {len(result['sql_queries'])}")
-            for i, query in enumerate(result['sql_queries'][:5], 1):
-                logger.info(f"      {i}. {query[:80]}...")
-        
-    except Exception as e:
-        logger.error(f"❌ Error processing resume: {e}")
-        import traceback
-        traceback.print_exc()
-    
-    finally:
-        # Step 4: Cleanup temp file
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-            logger.info(f"🗑️ Cleaned up temp file: {temp_path}")
+        s3.head_bucket(Bucket=BUCKET)
+        import psycopg2
+        with psycopg2.connect(os.environ['DATABASE_URL'], connect_timeout=5) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute('SELECT 1')
+        with closing(connect_queue()) as conn:
+            failed = conn.execute('SELECT count(*) FROM jobs WHERE status = "failed"').fetchone()[0]
+    except Exception as exc:
+        logger.warning('Readiness check failed: %s', exc)
+        raise HTTPException(status_code=503, detail='Dependency unavailable') from exc
+    return {'status': 'ok' if not failed else 'degraded', 'failed_jobs': failed}
 
 
-# ============================================================================
-# FASTAPI APPLICATION
-# ============================================================================
-
-app = FastAPI(
-    title="Resume Worker",
-    description="MinIO Webhook Handler for Resume PDF Processing",
-    version="1.0.0"
-)
+@app.get('/')
+def root():
+    return {'service': 'resume-worker'}
 
 
-@app.get("/")
-async def root():
-    """Health check endpoint."""
-    return {
-        "service": "resume-worker",
-        "status": "healthy",
-        "minio_endpoint": MINIO_ENDPOINT,
-        "bucket": BUCKET_NAME
-    }
-
-
-@app.get("/health")
-async def health():
-    """Health check for container orchestration."""
-    return {"status": "ok"}
-
-
-@app.post("/webhook")
-async def minio_webhook(request: Request, background_tasks: BackgroundTasks):
-    """
-    Handle MinIO webhook events.
-    
-    Only processes ObjectCreated events for files matching:
-    - Prefix: resume/
-    - Suffix: .pdf
-    """
+@app.post('/webhook')
+async def minio_webhook(request: Request):
     try:
-        payload: dict[str, Any] = await request.json()
-    except Exception as e:
-        logger.error(f"❌ Failed to parse JSON payload: {e}")
-        return {"status": "error", "message": "Invalid JSON payload"}
-    
-    # MinIO may send the event name at the top level or inside S3-style Records.
-    record = payload["Records"][0] if isinstance(payload.get("Records"), list) and payload["Records"] else None
-    event_name = payload.get("EventName")
-    if not event_name and record:
-        event_name = record.get("eventName")
-    event_name = event_name or "unknown"
-
-    # Log incoming event
-    logger.info(f"📨 Received webhook event: {event_name}")
-    
-    # Accept all object creation variants such as Put, Post, and CompleteMultipartUpload.
-    if "ObjectCreated" not in event_name:
-        logger.info(f"⏭️ Ignoring non-object-created event: {event_name}")
-        return {"status": "ignored", "reason": f"Event type not supported: {event_name}"}
-    
-    # Extract object key from payload
-    # MinIO sends different payload formats, handle both
-    file_key = None
-    
-    # Format 1: Direct "Key" field
-    if "Key" in payload:
-        file_key = unquote(payload["Key"])
-    
-    # Format 2: Nested in Records array (S3-compatible format)
-    elif record and "s3" in record and "object" in record["s3"]:
-        file_key = unquote(record["s3"]["object"].get("key", ""))
-    
-    if not file_key:
-        logger.warning("⚠️ Could not extract file key from payload")
-        logger.debug(f"Payload: {payload}")
-        return {"status": "error", "message": "Could not extract file key"}
-    
-    logger.info(f"📁 Raw file key: {file_key}")
-    
-    # Fix: MinIO sends "bucketname/resume/file.pdf", but we only want "resume/file.pdf"
-    if file_key.startswith(f"{BUCKET_NAME}/"):
-        file_key = file_key.replace(f"{BUCKET_NAME}/", "", 1)
-        logger.info(f"📁 Stripped bucket prefix, file key: {file_key}")
-    
-    # Filter: Only process resume/*.pdf files
-    # Check for "/resume/" anywhere in the path (handles full bucket paths like surajwebsite/resume/file.pdf)
-    if "/resume/" not in file_key and not file_key.startswith("resume/"):
-        logger.info(f"⏭️ Ignoring file outside resume/ folder: {file_key}")
-        return {"status": "ignored", "reason": "File not in resume/ folder"}
-    
-    if not file_key.lower().endswith(".pdf"):
-        logger.info(f"⏭️ Ignoring non-PDF file: {file_key}")
-        return {"status": "ignored", "reason": "File is not a PDF"}
-    
-    # Log the trigger
-    logger.info(f"🔔 Triggered: {file_key}")
-    
-    # Add processing job to background tasks
-    logger.info(f"✅ Queuing resume processing job for: {file_key}")
-    background_tasks.add_task(process_resume_job, file_key)
-    
-    return {
-        "status": "accepted",
-        "message": f"Processing queued for: {file_key}"
-    }
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+        payload = await request.json()
+        if not isinstance(payload, dict):
+            raise ValueError('Expected object')
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail='Invalid JSON payload') from exc
+    records = payload.get('Records')
+    events = records if isinstance(records, list) and records else [payload]
+    keys = []
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        name = event.get('eventName') or payload.get('EventName', '')
+        if not isinstance(name, str) or 'ObjectCreated' not in name:
+            continue
+        s3_event = event.get('s3') or {}
+        bucket = (s3_event.get('bucket') or {}).get('name', BUCKET)
+        key = (s3_event.get('object') or {}).get('key') or payload.get('Key', '')
+        if not isinstance(key, str) or bucket != BUCKET:
+            continue
+        key = unquote_plus(key)
+        if key.startswith(BUCKET + '/'):
+            key = key[len(BUCKET) + 1:]
+        if key.startswith('resume/') and key.lower().endswith('.pdf'):
+            keys.append(key)
+    if not keys:
+        return {'status': 'ignored'}
+    try:
+        with closing(connect_queue()) as conn, conn:
+            conn.executemany('INSERT INTO jobs (object_key) VALUES (?)', [(key,) for key in keys])
+    except sqlite3.Error as exc:
+        logger.exception('Failed to persist webhook')
+        raise HTTPException(status_code=503, detail='Queue unavailable') from exc
+    return {'status': 'accepted', 'queued': len(keys)}

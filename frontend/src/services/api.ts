@@ -4,11 +4,14 @@
  */
 
 import { API_ENDPOINTS } from '../config/api';
+import experienceSnapshot from '../data/experience.json';
+import projectsSnapshot from '../data/projects.json';
+import skillsSnapshot from '../data/skills.json';
 
 // Cache keys
 const CACHE_KEYS = {
     profile: 'portfolio_profile',
-    experience: 'portfolio_experience',
+    experience: 'portfolio_experience_v2',
     projects: 'portfolio_projects',
     skills: 'portfolio_skills',
     certifications: 'portfolio_certifications',
@@ -109,19 +112,20 @@ export async function fetchProfile(): Promise<Profile | null> {
 export async function fetchExperience(): Promise<Experience[]> {
     // Check cache first
     const cached = getFromCache<Experience[]>(CACHE_KEYS.experience);
-    if (cached) {
+    if (Array.isArray(cached) && cached.length) {
         return cached;
     }
 
     try {
         const response = await fetch(API_ENDPOINTS.experience);
-        if (!response.ok) return [];
+        if (!response.ok) return experienceSnapshot;
         const data = await response.json();
+        if (!Array.isArray(data) || !data.length) return experienceSnapshot;
         saveToCache(CACHE_KEYS.experience, data);
         return data;
     } catch (error) {
         console.error('Error fetching experience:', error);
-        return [];
+        return experienceSnapshot;
     }
 }
 
@@ -131,7 +135,7 @@ export async function fetchProjects(featured?: boolean): Promise<Project[]> {
 
     // Check cache first
     const cached = getFromCache<Project[]>(cacheKey);
-    if (cached) {
+    if (Array.isArray(cached) && cached.length) {
         return cached;
     }
 
@@ -141,32 +145,34 @@ export async function fetchProjects(featured?: boolean): Promise<Project[]> {
             url += '?featured=true';
         }
         const response = await fetch(url);
-        if (!response.ok) return [];
+        if (!response.ok) return featured ? projectsSnapshot.filter(project => project.featured) : projectsSnapshot;
         const data = await response.json();
+        if (!Array.isArray(data) || (!data.length && !featured)) return featured ? projectsSnapshot.filter(project => project.featured) : projectsSnapshot;
         saveToCache(cacheKey, data);
         return data;
     } catch (error) {
         console.error('Error fetching projects:', error);
-        return [];
+        return featured ? projectsSnapshot.filter(project => project.featured) : projectsSnapshot;
     }
 }
 
 export async function fetchSkills(): Promise<Skill[]> {
     // Check cache first
     const cached = getFromCache<Skill[]>(CACHE_KEYS.skills);
-    if (cached) {
+    if (Array.isArray(cached) && cached.length) {
         return cached;
     }
 
     try {
         const response = await fetch(API_ENDPOINTS.skills);
-        if (!response.ok) return [];
+        if (!response.ok) return skillsSnapshot;
         const data = await response.json();
+        if (!Array.isArray(data) || !data.length) return skillsSnapshot;
         saveToCache(CACHE_KEYS.skills, data);
         return data;
     } catch (error) {
         console.error('Error fetching skills:', error);
-        return [];
+        return skillsSnapshot;
     }
 }
 
@@ -193,8 +199,8 @@ export async function fetchCertifications(): Promise<Certification[]> {
 export function formatDate(dateString: string | null): string {
     if (!dateString) return 'Present';
     const date = new Date(dateString);
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
     return `${month}/${year}`;
 }
 

@@ -12,16 +12,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Stop Old Containers
-        run: docker compose down || true
-
       - name: Start New Stack
-        run: docker compose up --build -d
+        run: docker compose up --build -d frontend backend gateway resume-worker
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
           MINIO_ACCESS_KEY: ${{ vars.MINIO_ACCESS_KEY }}
 
-      - name: Clean up unused images
-        run: docker image prune -f
+      - name: Check resume worker
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:5000/health; then exit 0; fi
+            sleep 5
+          done
+          docker logs --tail 100 resume-processor
+          exit 1

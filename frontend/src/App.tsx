@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import './App.css';
 import Header from './components/Header';
 import About from './components/About';
@@ -9,6 +9,13 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 
 function App() {
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (id) {
+      requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: 'auto' }));
+    }
+  }, []);
+
   return (
     <div className="app">
       <Header />

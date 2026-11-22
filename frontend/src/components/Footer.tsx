@@ -1,57 +1,36 @@
 import React from 'react';
-import { FaGithub, FaLinkedin } from 'react-icons/fa';
-import { PROFILE_IMAGE_URL } from '../config/minio';
 
+/**
+ * Minimal footer: a square, a name, the essentials.
+ */
 const Footer: React.FC = () => {
-    return (
-        <footer className="footer bg-secondary section" style={{ padding: 'var(--spacing-2xl) 0', borderTop: '1px solid var(--color-border)' }}>
-            <div className="container">
-                <div className="footer-content-grid">
-                    {/* Left Column: Profile & Socials */}
-                    <div className="footer-left">
-                        <div className="footer-profile">
-                            <img src={PROFILE_IMAGE_URL} alt="Sudarshan Rajagopalan" className="footer-profile-img" />
-                            <div>
-                                <h3 className="footer-name">Sudarshan Rajagopalan</h3>
-                                <p className="footer-role">Software Engineer</p>
-                            </div>
-                        </div>
-                        <div className="footer-socials">
-                            <a href="https://github.com/suraj7026" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><FaGithub /></a>
-                            <a href="https://www.linkedin.com/in/sudarshan-rajagopalan/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><FaLinkedin /></a>
-                        </div>
-                    </div>
+  return (
+    <footer className="metro-footer">
+      <div className="container">
+        <div className="metro-footer-inner">
+          <div>
+            <p className="metro-footer-name">
+              <span className="metro-mark" aria-hidden="true" />
+              sudarshan rajagopalan
+            </p>
+            <p className="metro-footer-role">cloud ai engineer — google</p>
+          </div>
 
-                    {/* Right Column: Contact Details */}
-                    <div className="footer-right">
-                        <div className="footer-contact-group">
-                            <h3 className="footer-cta-title">Get in touch <span className="text-accent">&rarr;</span></h3>
-                            <div className="footer-contact-links">
-                                <div>
-                                    <span className="footer-contact-label">EMAIL ME:</span>
-                                    <a href="mailto:sudarshanr2308@gmail.com" className="footer-contact-link">sudarshanr2308@gmail.com</a>
-                                </div>
-                                <div>
-                                    <span className="footer-contact-label">CALL ME:</span>
-                                    <a href="tel:+918072263579" className="footer-contact-link">+91 8072263579</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+          <nav className="metro-footer-nav" aria-label="Footer">
+            <a href="#about">about</a>
+            <a href="#skills">skills</a>
+            <a href="#projects">projects</a>
+            <a href="#contact">contact</a>
+          </nav>
+        </div>
 
-                <div className="footer-bottom">
-                    <p>© 2026 Sudarshan Rajagopalan. All rights reserved.</p>
-                    <div className="footer-bottom-links">
-                        <a href="/">Home</a>
-                        <a href="#about">About</a>
-                        <a href="#projects">Portfolio</a>
-                        <a href="#contact">Contact</a>
-                    </div>
-                </div>
-            </div>
-        </footer>
-    );
+        <div className="metro-footer-bottom">
+          <p>© 2026 sudarshan rajagopalan. all rights reserved.</p>
+          <p>built in the metro design language</p>
+        </div>
+      </div>
+    </footer>
+  );
 };
 
 export default Footer;
