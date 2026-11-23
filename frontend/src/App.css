@@ -25,9 +25,6 @@
 }
 
 .metro-panorama {
-  --scrollbar-thumb: rgba(255, 255, 255, 0.28);
-  --scrollbar-track: #0a0a0a;
-
   flex: 1 1 0;
   min-width: 0;
   height: 100%;
@@ -38,8 +35,12 @@
   overflow-y: hidden;
   overscroll-behavior-x: contain;
   scroll-behavior: smooth;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.metro-panorama::-webkit-scrollbar {
+  display: none;
 }
 
 .metro-panorama-track {
@@ -235,17 +236,15 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: var(--color-bg-tile);
+  background: transparent;
   color: var(--color-fg-secondary);
   flex: none;
-  transition:
-    background-color var(--metro-fast) var(--metro-ease),
-    color var(--metro-fast) var(--metro-ease);
+  transition: color var(--metro-fast) var(--metro-ease);
 }
 
-.metro-rail-toggle:hover {
-  background: var(--color-accent);
-  color: var(--color-accent-ink);
+.metro-rail-toggle:hover,
+.metro-rail-toggle:focus-visible {
+  color: var(--color-accent);
 }
 
 .metro-nav {
@@ -287,12 +286,12 @@
   padding-left: 0;
   border-left: none;
   justify-content: center;
-  background: var(--color-bg-tile);
+  background: transparent;
 }
 
 .metro-header--collapsed .metro-nav-link:hover,
 .metro-header--collapsed .metro-nav-link:focus-visible {
-  background: var(--color-bg-tile-hover);
+  background: transparent;
   color: var(--color-accent);
 }
 
@@ -328,9 +327,23 @@
   background: var(--color-fg);
 }
 
-/* Mobile view: sidebar floats over the left edge, appears when scrolling left,
-   stays open while interacting, and auto-dismisses after inactivity */
+.metro-left-edge-zone {
+  display: none;
+}
+
+/* Mobile view: sidebar floats over the left edge, appears on left-edge tap or
+   swift leftward swipe, stays open while interacting, and auto-dismisses */
 @media (max-width: 768px) {
+  .metro-left-edge-zone {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 24px;
+    z-index: 150;
+  }
+
   .metro-header {
     position: fixed;
     top: 0;
@@ -667,17 +680,18 @@
    beside the section's left sidebar!
    ------------------------------------------------------------ */
 .metro-vertical-scroll {
-  --scrollbar-thumb: var(--color-accent);
-  --scrollbar-track: var(--color-bg-tile);
-
   height: 100%;
   flex: 0 0 auto;
-  padding: clamp(18px, 3.5dvh, 44px) 10px clamp(18px, 3.5dvh, 44px) 0;
+  padding: clamp(18px, 3.5dvh, 44px) 0;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior-y: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.metro-vertical-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 /* ------------------------------------------------------------
@@ -805,29 +819,7 @@
   }
 }
 
-/* Legacy fallback for WebKit/Blink browsers without scrollbar-color */
-@supports not (scrollbar-color: auto) {
-  .metro-panorama,
-  .metro-vertical-scroll {
-    scrollbar-width: auto;
-  }
 
-  .metro-panorama::-webkit-scrollbar,
-  .metro-vertical-scroll::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  .metro-panorama::-webkit-scrollbar-thumb,
-  .metro-vertical-scroll::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-  }
-
-  .metro-panorama::-webkit-scrollbar-track,
-  .metro-vertical-scroll::-webkit-scrollbar-track {
-    background: var(--scrollbar-track);
-  }
-}
 
 .metro-skill-item {
   height: 100%;

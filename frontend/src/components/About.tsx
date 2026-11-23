@@ -88,7 +88,7 @@ const About: React.FC = () => {
           </a>
           <a
             className="metro-tile tile-social"
-            href="https://www.linkedin.com/in/sudarshan-rajagopalan/"
+            href="https://in.linkedin.com/in/sudarshan-rajagopalan"
             target="_blank"
             rel="noopener noreferrer"
           >
