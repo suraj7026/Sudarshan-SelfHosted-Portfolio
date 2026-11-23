@@ -65,12 +65,22 @@ const getIcon = (iconName: string, color: string): React.ReactNode => {
 
 const Skills: React.FC = () => {
   const skillStrip = useRef<HTMLDivElement>(null);
+  const flipTimerRef = useRef<number | null>(null);
   const [allSkills, setAllSkills] = useState<SkillItem[]>(skillsSnapshot.map(skill => ({
     id: skill.id, name: skill.skill, category: skill.category,
     description: skill.description, icon: getIcon(skill.icon_name, skill.icon_color),
   })));
   const [categories, setCategories] = useState<string[]>(Array.from(new Set(skillsSnapshot.map(skill => skill.category))));
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [flippedSkillId, setFlippedSkillId] = useState<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (flipTimerRef.current !== null) {
+        window.clearTimeout(flipTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const loadSkills = async () => {
@@ -94,9 +104,32 @@ const Skills: React.FC = () => {
       ? allSkills
       : allSkills.filter((skill) => skill.category === selectedCategory);
 
+  const clearFlipTimer = () => {
+    if (flipTimerRef.current !== null) {
+      window.clearTimeout(flipTimerRef.current);
+      flipTimerRef.current = null;
+    }
+  };
+
   const selectCategory = (category: string) => {
+    clearFlipTimer();
     setSelectedCategory(category);
+    setFlippedSkillId(null);
     skillStrip.current?.scrollTo({ top: 0 });
+  };
+
+  const toggleSkillFlip = (id: number) => {
+    clearFlipTimer();
+    setFlippedSkillId((current) => {
+      if (current === id) {
+        return null;
+      }
+      flipTimerRef.current = window.setTimeout(() => {
+        setFlippedSkillId(null);
+        flipTimerRef.current = null;
+      }, 510);
+      return id;
+    });
   };
 
   return (
@@ -135,29 +168,41 @@ const Skills: React.FC = () => {
         </div>
 
         <div id="skill-strip" ref={skillStrip} className="metro-skill-grid metro-vertical-scroll" role="region" aria-label="Skills, vertically scrollable" tabIndex={0}>
-          {filteredSkills.map((skill, index) => (
-            <div key={skill.id} className={`metro-skill-item${index % 10 === 0 ? ' metro-skill-item--large' : index % 10 === 4 ? ' metro-skill-item--wide' : ''}`}>
-              <div
-                className="skill-flip"
-                tabIndex={0}
-                aria-label={`${skill.name} — ${skill.category}`}
-              >
-                <div className="skill-flip-inner">
-                  <div className="skill-face skill-face-front">
-                    <h3 className="skill-name">{skill.name}</h3>
-                    <p className="skill-desc">{skill.description}</p>
-                    <span className="skill-glyph" aria-hidden="true">
-                      {skill.icon}
-                    </span>
-                  </div>
-                  <div className="skill-face skill-face-back" aria-hidden="true">
-                    <span className="skill-category-label">category</span>
-                    <span className="skill-category">{skill.category.toLowerCase()}</span>
+          {filteredSkills.map((skill, index) => {
+            const isFlipped = flippedSkillId === skill.id;
+            return (
+              <div key={skill.id} className={`metro-skill-item${index % 10 === 0 ? ' metro-skill-item--large' : index % 10 === 4 ? ' metro-skill-item--wide' : ''}`}>
+                <div
+                  className={`skill-flip${isFlipped ? ' skill-flip--flipped' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isFlipped}
+                  aria-label={`${skill.name} — ${skill.category}`}
+                  onClick={() => toggleSkillFlip(skill.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleSkillFlip(skill.id);
+                    }
+                  }}
+                >
+                  <div className="skill-flip-inner">
+                    <div className="skill-face skill-face-front">
+                      <h3 className="skill-name">{skill.name}</h3>
+                      <p className="skill-desc">{skill.description}</p>
+                      <span className="skill-glyph" aria-hidden="true">
+                        {skill.icon}
+                      </span>
+                    </div>
+                    <div className="skill-face skill-face-back" aria-hidden="true">
+                      <span className="skill-category-label">category</span>
+                      <span className="skill-category">{skill.category.toLowerCase()}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

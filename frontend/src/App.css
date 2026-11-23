@@ -838,6 +838,7 @@
 .skill-flip {
   height: 100%;
   perspective: 1100px;
+  cursor: pointer;
 }
 
 .skill-flip-inner {
@@ -847,9 +848,14 @@
   transition: transform 500ms var(--metro-ease);
 }
 
-.skill-flip:hover .skill-flip-inner,
-.skill-flip:focus-visible .skill-flip-inner {
+.skill-flip--flipped .skill-flip-inner {
   transform: rotateX(180deg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .skill-flip:hover .skill-flip-inner {
+    transform: rotateX(180deg);
+  }
 }
 
 .skill-face {
